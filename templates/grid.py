@@ -1,4 +1,6 @@
+from gridDirection import *
 from location import *
+from gridLocationIterator import *
 
 class Grid:
     __rows = 0
@@ -40,13 +42,45 @@ class Grid:
         return self.__cells[self.location_to_index(loc)]
 
     def location_to_index(self, loc: Location) -> int:
-        return loc.get_row() + (loc.get_col() * self.__rows)
+        return loc.get_col() + (loc.get_row() * self.__columns)
 
     def get_rows(self) -> int:
         return self.__rows
 
     def get_columns(self) -> int:
         return self.__columns
+
+    def get_cells(self) -> list:
+        return self.__cells
+
+    def locations(self):
+        return GridLocationIterator.iterator(self.get_rows(), self.get_columns())
+
+    def fill(self, initialiser):
+        if initialiser == None:
+            raise Exception("NullPointerException")
+
+        for loc in self.locations():
+            try:
+                self.place(loc, initialiser[self.location_to_index(loc)][1])
+            except IndexError:
+                self.place(loc, "0")
+    
+    def fill_with_elm(self, elm: str):
+        for loc in self.locations():
+            self.place(loc, elm)
+
+    def get_or_default(self, loc: Location, defaultResult):
+        r = self.get(loc)
+        if r != None:
+            return r
+        return defaultResult
+
+    def iterator(self):
+        return iter(self.__cells)
+
+    def can_go(self, loc_from: Location, dir: GridDirection) -> bool:
+        return self.is_on_grid(loc_from.get_neighbor(dir))
     
     def __str__(self):
         s = ""
@@ -57,24 +91,27 @@ class Grid:
             else:
                 s += str(0) 
 
-            if not ((c + 1) % self.__rows) == 0:
+            if not ((c + 1) % self.__columns) == 0:
                 s += " | "
             
-            if (c + 1) % self.__rows == 0 and c != 0:
-                if not ((c + 1) % self.__columns) == 0:
+            if (c + 1) % self.__columns == 0 and c != 0:
+                if not ((c + 1) % self.__rows) == 0:
                     s += "\n"
-                    s += (("---" * (self.__rows - 2)) + ("-" * (self.__rows - 1)) + ("--" * 2))
+                    s += (("---" * (self.__columns - 2)) + ("-" * (self.__columns - 1)) + ("--" * 2))
                     s += "\n"
         return "Rows: \t " + str(self.__rows) + "\nColumns: " + str(self.__columns) + "\n\n" + s
 
 
 if __name__ == "__main__":
-    g = Grid(5, 4)
+    g = Grid(4, 5)
 
-    l = Location(1,2)
-    print(l)
-
-    g.place(l, "t")
-    print(g.get(l))
-
+    t = [(Location(0, 0), "V"), (Location(1, 0), "e"), (Location(2, 0), "t"), (Location(3, 0), "l"), (Location(4, 0), "e")]
+    g.fill(t)
     print(g)
+
+    itr = g.iterator()
+    print(next(itr))
+    print(next(itr))
+    print(next(itr))
+
+    print(g.can_go(Location(0,0), GridDirection.west()), g.can_go(Location(0,0), GridDirection.east()))

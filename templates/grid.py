@@ -1,11 +1,25 @@
 from gridDirection import *
 from location import *
 from gridLocationIterator import *
+from player import *
 
 class Grid:
+    __list = []
     __rows = 0
     __columns = 0
     __cells = []
+
+    @classmethod
+    def initialiser(cls, Rows, Columns, initialiser):
+        i = cls(Rows, Columns)
+        i.fill(initialiser)
+        return i
+
+    @classmethod
+    def initialiser_elm(cls, Rows, Columns, init_Elm):
+        i = cls(Rows, Columns)
+        i.fill_with_elm(init_Elm)
+        return i
 
     def __init__(self, Rows, Columns):
         self.__rows = Rows
@@ -13,10 +27,7 @@ class Grid:
         for _ in range(Rows * Columns):
             self.__cells.append(None)
 
-    def place(self, loc: Location, elm: str) -> None: 
-        if not isinstance(loc, Location):
-            raise TypeError("Wrong input: Should be Location")
-
+    def place(self, loc: Location, elm: Player) -> None: 
         self.check_location(loc)
         
         self.__cells[self.location_to_index(loc)] = elm
@@ -29,14 +40,14 @@ class Grid:
             raise IndexError("Row and column indices must be within bounds")
 
     def is_on_grid(self, loc: Location) -> bool:
-        if not isinstance(loc, Location):
+        if not isinstance(loc, Location) or loc == None:
             return False
         if loc.get_row() < 0 or loc.get_row() >= self.__rows:
             return False
         
         return loc.get_col() >= 0 and loc.get_col() < self.__columns
 
-    def get(self, loc: Location) -> str:
+    def get(self, loc: Location):
         self.check_location(loc)
 
         return self.__cells[self.location_to_index(loc)]
@@ -56,6 +67,15 @@ class Grid:
     def locations(self):
         return GridLocationIterator.iterator(self.get_rows(), self.get_columns())
 
+    def copy(self):
+        newGrid = Grid(self.get_rows(), self.get_columns())
+        self.fill_copy(newGrid)
+        return newGrid
+
+    def fill_copy(self, copy):
+        for loc in self.locations():
+            copy.place(loc, self.get(loc))
+
     def fill(self, initialiser):
         if initialiser == None:
             raise Exception("NullPointerException")
@@ -64,7 +84,7 @@ class Grid:
             try:
                 self.place(loc, initialiser[self.location_to_index(loc)][1])
             except IndexError:
-                self.place(loc, "0")
+                None
     
     def fill_with_elm(self, elm: str):
         for loc in self.locations():
@@ -81,6 +101,23 @@ class Grid:
 
     def can_go(self, loc_from: Location, dir: GridDirection) -> bool:
         return self.is_on_grid(loc_from.get_neighbor(dir))
+
+    def contains(self, obj: object):
+        return obj in self.__cells
+
+    def location_of(self, obj: object):
+        for loc in self.locations():
+            p = self.get(loc)
+            if isinstance(p, Player):
+                if p.equals(obj):
+                    return loc
+        
+        raise Exception("Can not find element")
+
+    def clear(self):
+        for loc in self.locations():
+            self.place(loc, None)
+
     
     def __str__(self):
         s = ""
@@ -104,14 +141,8 @@ class Grid:
 
 if __name__ == "__main__":
     g = Grid(4, 5)
+    p = Player("p")
+    g.place(Location(0, 0), p)
 
-    t = [(Location(0, 0), "V"), (Location(1, 0), "e"), (Location(2, 0), "t"), (Location(3, 0), "l"), (Location(4, 0), "e")]
-    g.fill(t)
     print(g)
-
-    itr = g.iterator()
-    print(next(itr))
-    print(next(itr))
-    print(next(itr))
-
-    print(g.can_go(Location(0,0), GridDirection.west()), g.can_go(Location(0,0), GridDirection.east()))
+    print(g.contains(p))
